@@ -1,31 +1,28 @@
+name: Deploy Lambda: Fulcrum Load
+
+on:
+  push:
+    paths:
+      - 'lambdas/fulcrum_load/**'
+
 jobs:
-  lambdas:
-    name: Deploy Lambda Functions
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
+      - name: Install AWS CLI
+        run: sudo apt-get install awscli -y
 
-      - name: Install Dependencies
+      - name: Package Lambda
         run: |
           cd lambdas/fulcrum_load
-          pip install -r requirements.txt -t .
           zip -r ../fulcrum_load.zip .
-          cd ../fulcrum_process
-          pip install -r requirements.txt -t .
-          zip -r ../fulcrum_process.zip .
 
-      - name: Deploy to S3
+      - name: Deploy Lambda
         run: |
-          aws s3 cp lambdas/fulcrum_load.zip s3://fulcrum2-lambda-code/fulcrum_load.zip
-          aws s3 cp lambdas/fulcrum_process.zip s3://fulcrum2-lambda-code/fulcrum_process.zip
-
-      - name: Update Lambda Functions
-        run: |
-          aws lambda update-function-code --function-name fulcrum_load --s3-bucket fulcrum2-lambda-code --s3-key fulcrum_load.zip
-          aws lambda update-function-code --function-name fulcrum_process --s3-bucket fulcrum2-lambda-code --s3-key fulcrum_process.zip
+          aws lambda update-function-code \\
+            --function-name fulcrum_load \\
+            --zip-file fileb://lambdas/fulcrum_load.zip
